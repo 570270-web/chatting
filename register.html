@@ -1,1 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Create Account</title>
 
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif;
+    }
+
+    #register {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input, button {
+        padding: 10px;
+        font-size: 16px;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="register">
+
+    <h2>Create Account</h2>
+
+    <input id="username"
+           placeholder="닉네임">
+
+    <input id="password"
+           type="password"
+           placeholder="비밀번호">
+
+    <input id="password2"
+           type="password"
+           placeholder="비밀번호 확인">
+
+    <button id="create">
+        계정 생성
+    </button>
+
+    <button onclick="location.href='index.html'">
+        돌아가기
+    </button>
+
+    <p id="status"></p>
+
+</div>
+
+
+<script type="module">
+
+import { createClient }
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+const supabase =
+    createClient(
+        "https://supabase.com/dashboard/project/jwtpucjbjmasqqomhyse/sql/0f40aeb0-1ae9-47c6-9905-b635d8f330e4",
+        "YOUR_SUPABASE_PUBLISHABLE_KEY"
+    );
+
+
+function authEmail(name) {
+
+    return (
+        name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        + "@chat.local"
+    );
+
+}
+
+
+document
+.getElementById("create")
+.addEventListener("click", async () => {
+
+    const name =
+        document.getElementById("username")
+        .value.trim();
+
+    const pass =
+        document.getElementById("password")
+        .value;
+
+    const pass2 =
+        document.getElementById("password2")
+        .value;
+
+    const status =
+        document.getElementById("status");
+
+
+    if (!name || !pass) {
+
+        status.textContent =
+            "모두 입력하세요.";
+
+        return;
+    }
+
+
+    if (pass !== pass2) {
+
+        status.textContent =
+            "비밀번호가 서로 다릅니다.";
+
+        return;
+    }
+
+
+    if (name.length < 2 || name.length > 20) {
+
+        status.textContent =
+            "닉네임은 2~20자로 입력하세요.";
+
+        return;
+    }
+
+
+    const { data: existing } =
+        await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", name)
+        .maybeSingle();
+
+
+    if (existing) {
+
+        status.textContent =
+            "이미 사용 중인 닉네임입니다.";
+
+        return;
+    }
+
+
+    const { data, error } =
+        await supabase.auth.signUp({
+
+            email: authEmail(name),
+
+            password: pass
+
+        });
+
+
+    if (error) {
+
+        status.textContent =
+            error.message;
+
+        return;
+    }
+
+
+    if (!data.user) {
+
+        status.textContent =
+            "계정 생성에 실패했습니다.";
+
+        return;
+    }
+
+
+    /*
+       이메일 확인을 꺼둔 프로젝트라면
+       바로 profile 생성 가능.
+    */
+
+    const { error: profileError } =
+        await supabase
+        .from("profiles")
+        .insert({
+
+            id: data.user.id,
+
+            username: name
+
+        });
+
+
+    if (profileError) {
+
+        status.textContent =
+            profileError.message;
+
+        return;
+    }
+
+
+    status.textContent =
+        "계정 생성 완료!";
+
+    setTimeout(() => {
+
+        location.href =
+            "index.html";
+
+    }, 1000);
+
+});
+
+</script>
+
+</body>
+</html>
