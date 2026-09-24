@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Login</title>
 
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif;
+    }
+
+    #login {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input, button {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    button {
+        cursor: pointer;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="login">
+
+    <h2>Realtime Chat</h2>
+
+    <input id="username"
+           placeholder="닉네임">
+
+    <input id="password"
+           type="password"
+           placeholder="비밀번호">
+
+    <button id="loginButton">
+        로그인
+    </button>
+
+    <button id="registerButton">
+        계정 생성
+    </button>
+
+    <p id="status"></p>
+
+</div>
+
+
+<script type="module">
+
+import { createClient }
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+const SUPABASE_URL =
+    "YOUR_SUPABASE_URL";
+
+const SUPABASE_KEY =
+    "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+
+const supabase =
+    createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+const username =
+    document.getElementById("username");
+
+const password =
+    document.getElementById("password");
+
+const status =
+    document.getElementById("status");
+
+
+/*
+    닉네임 → 내부용 email
+
+    실제 이메일을 사용하지 않고
+    Supabase Auth에서 사용할 식별자로 변환.
+*/
+function authEmail(name) {
+
+    return (
+        name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        + "@chat.local"
+    );
+
+}
+
+
+document
+.getElementById("loginButton")
+.addEventListener("click", async () => {
+
+    const name =
+        username.value.trim();
+
+    const pass =
+        password.value;
+
+    if (!name || !pass) {
+
+        status.textContent =
+            "닉네임과 비밀번호를 입력하세요.";
+
+        return;
+    }
+
+
+    const { error } =
+        await supabase.auth.signInWithPassword({
+
+            email: authEmail(name),
+
+            password: pass
+
+        });
+
+
+    if (error) {
+
+        status.textContent =
+            "로그인 실패: " + error.message;
+
+        return;
+    }
+
+
+    location.href =
+        "chat.html";
+
+});
+
+
+document
+.getElementById("registerButton")
+.addEventListener("click", () => {
+
+    location.href =
+        "register.html";
+
+});
+
+</script>
+
+</body>
+</html>
